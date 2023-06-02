@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "dynaconf-aws-secrets-manager-loader"
+version = "0.1.0"
+description = "A custom secrets loader for Dynaconf that uses AWS Secrets Manager as a source of truth"
+authors = ["Joël Perras <joel@fictivekin.com"]
+readme = "README.rst"
+packages = [{include = "dynaconf_aws_secrets_manager_loader"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+boto3 = "^1.26"
+botocore = "^1.29"
+dynaconf = "^3.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.3.1"
+lovely-pytest-docker = "^0.3.1"
+boto3-stubs = {extras = ["ssm"], version = "^1.26"}
+localstack-client = "^2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra"
+testpaths = [
+    "tests",
+]
