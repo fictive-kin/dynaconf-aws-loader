@@ -3,8 +3,38 @@ Dynaconf AWS Systems Manager Parameter Store Loader
 
 When configured, this loader will permit Dynaconf to query `AWS Systems Manager Parameter Store <https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html>`_ for slash-delimited hierarchical configuration data.
 
-Details
-~~~~~~~
+Loader Configuration
+--------------------
+
+An example:
+
+.. code-block:: python
+
+    from dynaconf import Dynaconf
+
+    settings = Dynaconf(
+        environments=True,
+        settings_file="settings.toml",
+        LOADERS_FOR_DYNACONF=[
+            "dynaconf_aws_loader.loader",
+            "dynaconf.loaders.env_loader"
+        ],
+    )
+
+
+Note that for the basic functioning of this loader, the `environments <https://www.dynaconf.com/configuration/#environments>`_ option for ``Dynaconf`` must be set, and an environment must be used.
+
+Configuration Variables
++++++++++++++++++++++++
+
+- ``AWS_SSM_PARAMETER_PROJECT_PREFIX``: Required.
+  The ``project`` prefix in the parameter store path. This value is required. It may be set in ``settings.toml`` (or equivalent), *or* may be sourced from the environment directly. This latter is a useful option if you wish to avoid using materialized settings files and instead wish to use environment variables only.
+
+- ``AWS_SSM_PARAMETER_NAMESPACE``: Optional.
+  This provides an additional level of grouping once the project and environment have been determined.
+
+Parameter Store Details
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The structure that this loader expects from the path-based organization in SSM is:
 
