@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.8", "3.9", "3.10"]
     steps:
 
     - uses: actions/checkout@v3
@@ -37,13 +37,11 @@ jobs:
         virtualenvs-in-project: true
         installer-parallel: true
 
-    - name: Get LocalStack image
-      run: |
-        docker pull localstack/localstack # Make sure to pull the latest version of the image
+    - name: Get latest LocalStack Docker image
+      run: docker pull localstack/localstack
 
     - name: Install dependencies
       run: poetry install
-      # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
 
     - name: Run Tests with PyTest for Python ${{ matrix.python-version }}
-      run: poetry run pytest --verbose -rsxX
+      run: poetry run pytest --verbose -rsxX --color=auto
