@@ -25,7 +25,7 @@ An example:
 Note that for the basic functioning of this loader, the `environments <https://www.dynaconf.com/configuration/#environments>`_ option for ``Dynaconf`` must be set, and an environment must be used.
 
 Configuration Variables
-+++++++++++++++++++++++
+-----------------------
 
 - ``AWS_SSM_PARAMETER_PROJECT_PREFIX``: Required.
   The ``project`` prefix in the parameter store path. This value is required. It may be set in ``settings.toml`` (or equivalent), *or* may be sourced from the environment directly. This latter is a useful option if you wish to avoid using materialized settings files and instead wish to use environment variables only.
