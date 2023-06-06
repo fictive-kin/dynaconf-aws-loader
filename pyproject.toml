@@ -1,10 +1,23 @@
 [tool.poetry]
-name = "dynaconf-aws-secrets-manager-loader"
+name = "dynaconf-aws-loader"
 version = "0.1.0"
-description = "A custom secrets loader for Dynaconf that uses AWS Secrets Manager as a source of truth"
-authors = ["Joël Perras <joel@fictivekin.com"]
+description = "A custom loader for Dynaconf that uses AWS Systems Manager Parameter Store as a source of truth"
+authors = [
+    "Joël Perras <joel@fictivekin.com>",
+]
 readme = "README.rst"
-packages = [{include = "dynaconf_aws_secrets_manager_loader"}]
+packages = [{include = "dynaconf_aws_loader"}]
+license = "MIT"
+keywords = ["dynaconf", "AWS", "SSM"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+include = [
+    "LICENSE"
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
