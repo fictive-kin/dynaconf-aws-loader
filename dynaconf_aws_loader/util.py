@@ -3,9 +3,13 @@ Utility functions for AWS Systems Manager Parameter Store Dynaconf loader
 
 """
 
+import typing as t
 
-def slashes_to_dict(data: list[dict]) -> dict:
-    """Format a list of slash-delimited strings into a dictionary, recursively."""
+
+def slashes_to_dict(data: t.Iterable[t.Mapping]) -> t.Mapping:
+    """
+    Format a list of slash-delimited strings into a dictionary, recursively.
+    """
 
     result = dict()
 
