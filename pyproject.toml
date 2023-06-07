@@ -2,10 +2,13 @@
 name = "dynaconf-aws-loader"
 version = "0.3.1"
 description = "A custom loader for Dynaconf that uses AWS Systems Manager Parameter Store as a source of truth"
+homepage = "https://github.com/fictivekin/dynaconf-aws-loader"
+repository = "https://github.com/fictivekin/dynaconf-aws-loader"
 authors = [
     "Joël Perras <joel@fictivekin.com>",
 ]
 readme = "README.rst"
+changelog = "CHANGELOG.md"
 packages = [{include = "dynaconf_aws_loader"}]
 license = "MIT"
 keywords = ["dynaconf", "AWS", "SSM"]
@@ -18,6 +21,7 @@ classifiers = [
 include = [
     "LICENSE"
 ]
+
 
 [tool.poetry.dependencies]
 python = "^3.8"
