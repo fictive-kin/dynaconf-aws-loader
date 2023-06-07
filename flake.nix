@@ -20,6 +20,7 @@
             nodePackages.yaml-language-server # docker-compose.yml formatting for test suite
             black # Handle formatting
             (python310.withPackages(ps: with ps; [ pygments ])) # Readme linter/formatting
+            git-cliff # For generating changelog
           ];
         };
       });
