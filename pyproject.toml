@@ -8,7 +8,6 @@ authors = [
     "Joël Perras <joel@fictivekin.com>",
 ]
 readme = "README.rst"
-changelog = "CHANGELOG.md"
 packages = [{include = "dynaconf_aws_loader"}]
 license = "MIT"
 keywords = ["dynaconf", "AWS", "SSM"]
@@ -19,7 +18,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 include = [
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
 ]
 
 
