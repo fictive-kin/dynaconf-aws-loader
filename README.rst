@@ -27,11 +27,16 @@ Note that for the basic functioning of this loader, the `environments <https://w
 Configuration Variables
 -----------------------
 
+Both of the following configuration values can be set in the environment _or_ in the ``settings.toml`` (or equivalent format) in question.
+
 - ``AWS_SSM_PARAMETER_PROJECT_PREFIX``: Required.
-  The ``project`` prefix in the parameter store path. This value is required. It may be set in ``settings.toml`` (or equivalent), *or* may be sourced from the environment directly. This latter is a useful option if you wish to avoid using materialized settings files and instead wish to use environment variables only.
+  The ``project`` prefix in the parameter store path.
 
 - ``AWS_SSM_PARAMETER_NAMESPACE``: Optional.
   This provides an additional level of grouping once the project and environment have been determined.
+
+.. note::
+   If a namespace is utilized, be aware that namespaced settings will be merged with non-namespaced settings. This merge is a naive one, where namespaced settings will completely overwrite non-namespaced settings with the same key.
 
 Parameter Store Details
 ~~~~~~~~~~~~~~~~~~~~~~~
