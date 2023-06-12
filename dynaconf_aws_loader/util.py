@@ -41,3 +41,30 @@ def pull_from_env_or_obj(key_name: str, env: t.Mapping, obj: t.Any) -> t.Optiona
         obj.set(key_name, value)
 
     return value
+
+
+class NamespaceFilter:
+    """
+    Filter hierarchical paths with the same namespace prefix pattern.
+    """
+
+    def __init__(self, prefix: str):
+        """
+        Initialize this filter object with the given ``prefix``.
+        """
+
+        if not isinstance(prefix, str):
+            raise TypeError("`AWS_SSM_PARAMETER_NAMESPACE_FILTER` must be a string.")
+
+        self.prefix = prefix
+
+    def __call__(self, data):
+        """Filter out data that contains the namespace prefix."""
+
+        result = {}
+        for key, value in data.items():
+            if self.prefix in key:
+                continue
+            result[key] = value
+
+        return result

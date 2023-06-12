@@ -139,6 +139,10 @@ def load(
                 silent=silent,
             )
             if normal_results:
+                filter_strategy = obj.get("NAMESPACE_FILTER_STRATEGY")
+                if filter_strategy:
+                    normal_results = filter_strategy(normal_results)
+
                 obj.update(
                     normal_results,
                     loader_identifier=IDENTIFIER,

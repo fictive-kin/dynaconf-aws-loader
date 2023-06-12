@@ -9,6 +9,8 @@ import pytest
 
 from dynaconf import Dynaconf
 
+from dynaconf_aws_loader.util import NamespaceFilter
+
 
 def test_basic_environment_based_settings(
     basic_settings: pathlib.Path,
@@ -219,3 +221,47 @@ def test_with_namespace_merging(
 
     # applied for non-namespaced production env
     assert settings.REGION == "region-identifier"
+
+    # The namespaced data will still be available directly on the configuration
+    # object. To strip this from the final settings object, we'll need a filter.
+    assert settings.get("pr-123") is not None
+
+
+def test_with_namespace_merging_and_filter(
+    settings_with_namespace_and_non_namespaced: pathlib.Path,
+):
+    """
+    A namespace was provided, and we desire merging those with the
+    non-namespaced path, but we want to filter out the namespaced block
+    in the final settings.
+
+    """
+
+    project_name = "combo"
+    namespace = "pr-123"
+    namespace_filter_pattern = "pr-"
+
+    settings = Dynaconf(
+        environments=True,
+        FORCE_ENV_FOR_DYNACONF="production",
+        settings_file=str(settings_with_namespace_and_non_namespaced.resolve()),
+        LOADERS_FOR_DYNACONF=[
+            "dynaconf_aws_loader.loader",
+        ],
+        namespace_filter_strategy=NamespaceFilter(namespace_filter_pattern),
+    )
+
+    assert settings.current_env == "production"
+    assert settings.AWS_SSM_PARAMETER_PROJECT_PREFIX == project_name
+    assert settings.AWS_SSM_PARAMETER_NAMESPACE == namespace
+
+    assert settings["DATABASE"] == {
+        "host": "namespaced.production.example.com",
+        "password": "namespaced-production-password",
+    }
+
+    # Applied as default for all envs/namespaces
+    assert settings.PRODUCTS == {"plans": ["monthly", "yearly"]}
+    assert settings.REGION == "region-identifier"
+
+    assert settings.get("pr-123") is None
