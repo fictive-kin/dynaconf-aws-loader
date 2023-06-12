@@ -303,6 +303,7 @@ def settings_with_namespace_and_non_namespaced(
             f"/{project_name}/qa/database/host",
             f"/{project_name}/production/database/password",
             f"/{project_name}/production/database/host",
+            f"/{project_name}/production/region",
             f"/{project_name}/development/{namespace}/products",
             f"/{project_name}/qa/{namespace}/my_config_value",
             f"/{project_name}/production/{namespace}/database/password",
