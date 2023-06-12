@@ -27,3 +27,17 @@ def slashes_to_dict(data: t.Iterable[t.Mapping]) -> t.Mapping:
                     cur_dict = cur_dict.setdefault(field, {})
 
     return result
+
+
+def pull_from_env_or_obj(key_name: str, env: t.Mapping, obj: t.Any) -> t.Optional[str]:
+    """
+    Get value from environment or object, and conditionally set on object.
+    """
+    value: str | None = env.get(key_name)
+
+    if value is None:
+        value = obj.get(key_name)
+    else:
+        obj.set(key_name, value)
+
+    return value
