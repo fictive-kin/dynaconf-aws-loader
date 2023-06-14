@@ -8,7 +8,7 @@ import typing as t
 import os
 import logging
 import boto3
-from botocore.exceptions import ClientError, BotoCoreError
+from botocore.exceptions import ClientError, BotoCoreError, NoRegionError
 
 from dynaconf.utils import build_env_list
 from dynaconf.utils.parse_conf import parse_conf_data
@@ -82,7 +82,13 @@ def load(
 
     """
 
-    client = get_client(obj)
+    try:
+        client = get_client(obj)
+    except NoRegionError as exc:
+        logging.exception(exc)
+        # We have no region, therefore, we cannot load anything. Just return
+        return
+
     env_list = build_env_list(obj, env or obj.current_env)
 
     project_prefix: str = obj.get(
