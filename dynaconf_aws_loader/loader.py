@@ -84,10 +84,15 @@ def load(
 
     try:
         client = get_client(obj)
-    except NoRegionError as exc:
-        logging.exception(exc)
-        # We have no region, therefore, we cannot load anything. Just return
-        return
+    except NoRegionError:
+        if silent:
+            # We have no region, therefore, we cannot load anything.
+            logging.exception(
+                "An AWS region must be available/specified for the Dynaconf"
+                " AWS Loader to function."
+            )
+            return
+        raise
 
     env_list = build_env_list(obj, env or obj.current_env)
 
@@ -110,57 +115,63 @@ def load(
         if namespace_prefix is not None:
             path = f"{path}/{namespace_prefix}"
 
-        try:
-            if key:
-                logger.debug(
-                    "Attempting to load parameter %s from AWS SSM for env %s."
-                    % (key, env_name)
-                )
+        if key is not None:
+            logger.debug(
+                "Attempting to load parameter %s from AWS SSM for env %s."
+                % (key, env_name)
+            )
 
+            try:
                 value = client.get_parameter(Name=f"/{path}/{key}", WithDecryption=True)
-                if data := value.get("Parameter"):
-                    parsed_value = parse_conf_data(
-                        data["Value"], tomlfy=True, box_settings=obj
-                    )
-                    if parsed_value:
-                        obj.set(key, parsed_value, validate=validate)
-
-            else:
-                # With no ``key`` specified, we load all data from the source
-                # that we are allowed to access.
-                logger.debug(
-                    "Attempting to load all parameters from AWS SSM for path %s." % path
-                )
-                data = []
-                paginator = client.get_paginator("get_parameters_by_path")
-                for page in paginator.paginate(
-                    Path=path, Recursive=True, WithDecryption=True
-                ):
-                    for parameter in page["Parameters"]:
-                        data.append({parameter["Name"]: parameter["Value"]})
-
-                result = parse_conf_data(data=slashes_to_dict(data), tomlfy=True)
-
-                if result and project_prefix in result:
-                    # Prune out the prefixes before setting on the object
-                    result = result[project_prefix]
-
-                    if result and env_name in result:
-                        result = result[env_name]
-
-                    if namespace_prefix is not None and namespace_prefix in result:
-                        result = result[namespace_prefix]
-
-                    obj.update(
-                        result,
-                        loader_identifier=IDENTIFIER,
-                        validate=validate,
-                    )
-        except (ClientError, BotoCoreError):
-            logger.error("Could not connect to AWS SSM.")
-            if silent is False:
+            except (ClientError, BotoCoreError):
+                if silent:
+                    logger.exception("Could not connect to AWS SSM.")
+                    return
                 raise
-        except Exception:
+
+            if data := value.get("Parameter"):
+                parsed_value = parse_conf_data(
+                    data["Value"], tomlfy=True, box_settings=obj
+                )
+                if parsed_value:
+                    obj.set(key, parsed_value, validate=validate)
+
+            return
+
+        # With no ``key`` specified, we load all data from the source
+        # that we are allowed to access.
+        logger.debug(
+            "Attempting to load all parameters from AWS SSM for path %s." % path
+        )
+        data = []
+        paginator = client.get_paginator("get_parameters_by_path")
+
+        try:
+            for page in paginator.paginate(
+                Path=path, Recursive=True, WithDecryption=True
+            ):
+                for parameter in page["Parameters"]:
+                    data.append({parameter["Name"]: parameter["Value"]})
+
+            result = parse_conf_data(data=slashes_to_dict(data), tomlfy=True)
+
+            if result and project_prefix in result:
+                # Prune out the prefixes before setting on the object
+                result = result[project_prefix]
+
+                if result and env_name in result:
+                    result = result[env_name]
+
+                if namespace_prefix is not None and namespace_prefix in result:
+                    result = result[namespace_prefix]
+
+                obj.update(
+                    result,
+                    loader_identifier=IDENTIFIER,
+                    validate=validate,
+                )
+        except (ClientError, BotoCoreError):
             if silent:
-                return False
+                logger.exception("Could not connect to AWS SSM.")
+                return
             raise
