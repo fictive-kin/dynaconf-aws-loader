@@ -20,7 +20,7 @@ if t.TYPE_CHECKING:
     from mypy_boto3_ssm.client import SSMClient
 
 
-logger = logging.getLogger("dynaconf")
+logger = logging.getLogger("dynaconf.aws_loader")
 
 
 def get_client(obj) -> SSMClient:
@@ -185,8 +185,8 @@ def _fetch_single_parameter(
 
     try:
         value = client.get_parameter(Name=path, WithDecryption=True)
-    except (ClientError, BotoCoreError):
-        logger.exception("Could not connect to AWS SSM.")
+    except (ClientError, BotoCoreError) as exc:
+        logger.warn("Could not connect to AWS SSM.", exc_info=exc)
         if silent:
             return
         raise
@@ -222,8 +222,8 @@ def _fetch_all_parameters(
             for parameter in page["Parameters"]:
                 data.append({parameter["Name"]: parameter["Value"]})
 
-    except (ClientError, BotoCoreError):
-        logger.exception("Could not connect to AWS SSM.")
+    except (ClientError, BotoCoreError) as exc:
+        logger.warn("Could not connect to AWS SSM.", exc_info=exc)
         if silent:
             return
         raise
