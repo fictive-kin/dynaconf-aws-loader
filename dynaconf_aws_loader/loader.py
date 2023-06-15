@@ -26,8 +26,8 @@ logger = logging.getLogger("dynaconf")
 def get_client(obj) -> SSMClient:
     """Get a boto3 client to access AWS System Parameter Store"""
 
-    endpoint_url = obj.get("AWS_ENDPOINT_URL_FOR_DYNACONF")
-    session = boto3.session.Session(**obj.get("AWS_SESSION_FOR_DYNACONF", {}))
+    endpoint_url = obj.get("SSM_ENDPOINT_URL_FOR_DYNACONF")
+    session = boto3.session.Session(**obj.get("SSM_SESSION_FOR_DYNACONF", {}))
     client = session.client(service_name="ssm", endpoint_url=endpoint_url)
     return client
 
@@ -82,8 +82,8 @@ def load(
 
     """
 
-    prefix_key_name = "AWS_SSM_PARAMETER_PROJECT_PREFIX"
-    namespace_key_name = "AWS_SSM_PARAMETER_NAMESPACE"
+    prefix_key_name = "SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF"
+    namespace_key_name = "SSM_PARAMETER_NAMESPACE_FOR_DYNACONF"
 
     try:
         client = get_client(obj)
@@ -139,7 +139,7 @@ def load(
                 silent=silent,
             )
             if normal_results:
-                filter_strategy = obj.get("NAMESPACE_FILTER_STRATEGY")
+                filter_strategy = obj.get("AWS_SSM_NAMESPACE_FILTER_STRATEGY")
                 if filter_strategy:
                     normal_results = filter_strategy(normal_results)
 

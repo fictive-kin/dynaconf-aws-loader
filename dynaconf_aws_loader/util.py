@@ -54,7 +54,7 @@ class NamespaceFilter:
         """
 
         if not isinstance(prefix, str):
-            raise TypeError("`AWS_SSM_PARAMETER_NAMESPACE_FILTER` must be a string.")
+            raise TypeError("NamespaceFilter prefix must be a string.")
 
         self.prefix = prefix
 

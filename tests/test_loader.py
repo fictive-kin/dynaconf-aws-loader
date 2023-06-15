@@ -31,7 +31,7 @@ def test_basic_environment_based_settings(
     )
 
     assert dev_settings.current_env == "development"
-    assert dev_settings.AWS_SSM_PARAMETER_PROJECT_PREFIX == "basic"
+    assert dev_settings.SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF == "basic"
 
     assert dev_settings.MY_CONFIG_VALUE == "test123"
 
@@ -55,7 +55,7 @@ def test_basic_environment_based_settings(
     )
 
     assert prod_settings.current_env == "production"
-    assert prod_settings.AWS_SSM_PARAMETER_PROJECT_PREFIX == "basic"
+    assert prod_settings.SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF == "basic"
 
     # Loaded from default env
     assert prod_settings.PRODUCTS == {"plans": ["monthly", "yearly"]}
@@ -107,7 +107,7 @@ def test_settings_get_project_prefix_from_environ(
     settings.toml|yaml|etc file present.
     """
 
-    os.environ["AWS_SSM_PARAMETER_PROJECT_PREFIX"] = "basic-envless"
+    os.environ["SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF"] = "basic-envless"
 
     # Example var for built-in dynaconf env loader to pick up
     os.environ["DYNACONF_PRODUCT_NAME"] = "foobar"
@@ -122,13 +122,13 @@ def test_settings_get_project_prefix_from_environ(
 
     # From the ENV vars that we load
     assert settings.PRODUCT_NAME == "foobar"
-    assert settings.AWS_SSM_PARAMETER_PROJECT_PREFIX == "basic-envless"
+    assert settings.SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF == "basic-envless"
 
     # From Parameter store
     assert settings.PRODUCTS == {"plans": ["monthly", "yearly"]}
     assert settings["DATABASE"] == {"host": "db.example.com", "password": "password"}
 
-    del os.environ["AWS_SSM_PARAMETER_PROJECT_PREFIX"]
+    del os.environ["SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF"]
     del os.environ["DYNACONF_PRODUCT_NAME"]
 
 
@@ -151,8 +151,8 @@ def test_with_namespace(settings_with_namespace: pathlib.Path):
     )
 
     assert dev_settings.current_env == "development"
-    assert dev_settings.AWS_SSM_PARAMETER_PROJECT_PREFIX == project_name
-    assert dev_settings.AWS_SSM_PARAMETER_NAMESPACE == namespace
+    assert dev_settings.SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF == project_name
+    assert dev_settings.SSM_PARAMETER_NAMESPACE_FOR_DYNACONF == namespace
 
     # From settings.toml [default] config
     assert dev_settings.PRODUCT_NAME == "foobar"
@@ -196,8 +196,8 @@ def test_with_namespace_merging(
     )
 
     assert settings.current_env == "production"
-    assert settings.AWS_SSM_PARAMETER_PROJECT_PREFIX == project_name
-    assert settings.AWS_SSM_PARAMETER_NAMESPACE == namespace
+    assert settings.SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF == project_name
+    assert settings.SSM_PARAMETER_NAMESPACE_FOR_DYNACONF == namespace
 
     # Non-namespaced parameter/values:
     # /combo/production/database/password => production-password
@@ -248,12 +248,12 @@ def test_with_namespace_merging_and_filter(
         LOADERS_FOR_DYNACONF=[
             "dynaconf_aws_loader.loader",
         ],
-        namespace_filter_strategy=NamespaceFilter(namespace_filter_pattern),
+        aws_ssm_namespace_filter_strategy=NamespaceFilter(namespace_filter_pattern),
     )
 
     assert settings.current_env == "production"
-    assert settings.AWS_SSM_PARAMETER_PROJECT_PREFIX == project_name
-    assert settings.AWS_SSM_PARAMETER_NAMESPACE == namespace
+    assert settings.SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF == project_name
+    assert settings.SSM_PARAMETER_NAMESPACE_FOR_DYNACONF == namespace
 
     assert settings["DATABASE"] == {
         "host": "namespaced.production.example.com",

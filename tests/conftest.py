@@ -56,7 +56,7 @@ def basic_settings(
 
     data = f"""
     [default]
-    AWS_SSM_PARAMETER_PROJECT_PREFIX = '{project_name}'
+    SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF = '{project_name}'
     PRODUCT_NAME = "foobar"
     """
 
@@ -108,7 +108,7 @@ def settings_without_environments(
 
     project_name = "basic-envless"
     data = f"""
-    AWS_SSM_PARAMETER_PROJECT_PREFIX = '{project_name}'
+    SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF = '{project_name}'
     PRODUCT_NAME = "foobar"
     """
 
@@ -157,8 +157,8 @@ def settings_with_namespace(
 
     project_name = "basic-namespaced"
     namespace = "consumer"
-    os.environ["AWS_SSM_PARAMETER_PROJECT_PREFIX"] = project_name
-    os.environ["AWS_SSM_PARAMETER_NAMESPACE"] = namespace
+    os.environ["SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF"] = project_name
+    os.environ["SSM_PARAMETER_NAMESPACE_FOR_DYNACONF"] = namespace
 
     data = """
     [default]
@@ -200,8 +200,8 @@ def settings_with_namespace(
             f"/{project_name}/development/{namespace}/products",
         ]
     )
-    del os.environ["AWS_SSM_PARAMETER_PROJECT_PREFIX"]
-    del os.environ["AWS_SSM_PARAMETER_NAMESPACE"]
+    del os.environ["SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF"]
+    del os.environ["SSM_PARAMETER_NAMESPACE_FOR_DYNACONF"]
 
 
 @pytest.fixture
@@ -214,8 +214,8 @@ def settings_with_namespace_and_non_namespaced(
 
     project_name = "combo"
     namespace = "pr-123"
-    os.environ["AWS_SSM_PARAMETER_PROJECT_PREFIX"] = project_name
-    os.environ["AWS_SSM_PARAMETER_NAMESPACE"] = namespace
+    os.environ["SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF"] = project_name
+    os.environ["SSM_PARAMETER_NAMESPACE_FOR_DYNACONF"] = namespace
 
     data = f"""
     PRODUCT_NAME = "foobar"
@@ -311,5 +311,5 @@ def settings_with_namespace_and_non_namespaced(
         ]
     )
 
-    del os.environ["AWS_SSM_PARAMETER_PROJECT_PREFIX"]
-    del os.environ["AWS_SSM_PARAMETER_NAMESPACE"]
+    del os.environ["SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF"]
+    del os.environ["SSM_PARAMETER_NAMESPACE_FOR_DYNACONF"]
