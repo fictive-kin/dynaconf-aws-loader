@@ -27,11 +27,22 @@ Note that for the basic functioning of this loader, the `environments <https://w
 Configuration Variables
 -----------------------
 
-- ``AWS_SSM_PARAMETER_PROJECT_PREFIX``: Required.
-  The ``project`` prefix in the parameter store path. This value is required. It may be set in ``settings.toml`` (or equivalent), *or* may be sourced from the environment directly. This latter is a useful option if you wish to avoid using materialized settings files and instead wish to use environment variables only.
+Both of the following configuration values should be set in the *environment* to avoid a chicken/egg scenario for initializing this custom loader:
 
-- ``AWS_SSM_PARAMETER_NAMESPACE``: Optional.
-  This provides an additional level of grouping once the project and environment have been determined.
+- ``SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF``: Required.
+  The ``project`` prefix in the parameter store path. For example, if the parameter hierarchy looks something like ``/baldur/development/database_uri``, then in this case ``SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF=baldur``.
+
+- ``SSM_PARAMETER_NAMESPACE_FOR_DYNACONF``: Optional.
+  This provides an additional level of grouping once the project and environment have been determined. For example, if the parameter hierarchy looks something like ``/baldur/pr-123/development/database_uri``, then ``SSM_PARAMETER_NAMESPACE_FOR_DYNACONF=pr-123``.
+
+.. note::
+   If a namespace is utilized, be aware that namespaced settings will be *merged* with non-namespaced settings. This merge is a naive one, where namespaced settings will completely overwrite non-namespaced settings with the same key.
+
+The following optional variables should be set in your ``settings.toml`` (or equivalent format), if desired:
+
+- ``SSM_ENDPOINT_URL_FOR_DYNACONF``: If your AWS SSM uses a different endpoint than the AWS default. This can be useful for local development when you are running something like `LocalStack <https://localstack.cloud/>`_.
+- ``SSM_SESSION_FOR_DYNACONF``: If you require custom `boto3.session.Session <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html>`_ arguments, you can specify then as a dictionary here. Note that this will override the default ``boto3`` credential configuration.
+
 
 Parameter Store Details
 ~~~~~~~~~~~~~~~~~~~~~~~

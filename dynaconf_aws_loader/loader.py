@@ -14,20 +14,20 @@ from dynaconf.utils import build_env_list
 from dynaconf.utils.parse_conf import parse_conf_data
 
 from . import IDENTIFIER
-from .util import slashes_to_dict
+from .util import slashes_to_dict, pull_from_env_or_obj
 
 if t.TYPE_CHECKING:
     from mypy_boto3_ssm.client import SSMClient
 
 
-logger = logging.getLogger("dynaconf")
+logger = logging.getLogger("dynaconf.aws_loader")
 
 
 def get_client(obj) -> SSMClient:
     """Get a boto3 client to access AWS System Parameter Store"""
 
-    endpoint_url = obj.get("AWS_ENDPOINT_URL_FOR_DYNACONF")
-    session = boto3.session.Session(**obj.get("AWS_SESSION_FOR_DYNACONF", {}))
+    endpoint_url = obj.get("SSM_ENDPOINT_URL_FOR_DYNACONF")
+    session = boto3.session.Session(**obj.get("SSM_SESSION_FOR_DYNACONF", {}))
     client = session.client(service_name="ssm", endpoint_url=endpoint_url)
     return client
 
@@ -82,6 +82,9 @@ def load(
 
     """
 
+    prefix_key_name = "SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF"
+    namespace_key_name = "SSM_PARAMETER_NAMESPACE_FOR_DYNACONF"
+
     try:
         client = get_client(obj)
     except NoRegionError:
@@ -96,17 +99,14 @@ def load(
 
     env_list = build_env_list(obj, env or obj.current_env)
 
-    project_prefix: str = obj.get(
-        "AWS_SSM_PARAMETER_PROJECT_PREFIX",
-        os.environ.get("AWS_SSM_PARAMETER_PROJECT_PREFIX"),
-    )
+    project_prefix = pull_from_env_or_obj(prefix_key_name, os.environ, obj)
+    namespace_prefix = pull_from_env_or_obj(namespace_key_name, os.environ, obj)
 
     if project_prefix is None:
         raise ValueError(
-            "AWS_SSM_PARAMETER_PROJECT_PREFIX must be set in settings"
+            f"{prefix_key_name} must be set in settings"
             " or environment for AWS SSM loader to work."
         )
-    namespace_prefix: str | None = obj.get("AWS_SSM_PARAMETER_NAMESPACE", None)
 
     for env_name in env_list:
         env_name = env_name.lower()
@@ -116,62 +116,128 @@ def load(
             path = f"{path}/{namespace_prefix}"
 
         if key is not None:
-            logger.debug(
-                "Attempting to load parameter %s from AWS SSM for env %s."
-                % (key, env_name)
+            value = _fetch_single_parameter(
+                client,
+                project_prefix=project_prefix,
+                env_name=env_name,
+                namespace_prefix=namespace_prefix,
+                silent=silent,
             )
-
-            try:
-                value = client.get_parameter(Name=f"/{path}/{key}", WithDecryption=True)
-            except (ClientError, BotoCoreError):
-                if silent:
-                    logger.exception("Could not connect to AWS SSM.")
-                    return
-                raise
-
-            if data := value.get("Parameter"):
-                parsed_value = parse_conf_data(
-                    data["Value"], tomlfy=True, box_settings=obj
-                )
-                if parsed_value:
-                    obj.set(key, parsed_value, validate=validate)
+            if value:
+                obj.set(key, value, validate=validate)
 
             return
-
-        # With no ``key`` specified, we load all data from the source
-        # that we are allowed to access.
-        logger.debug(
-            "Attempting to load all parameters from AWS SSM for path %s." % path
-        )
-        data = []
-        paginator = client.get_paginator("get_parameters_by_path")
-
-        try:
-            for page in paginator.paginate(
-                Path=path, Recursive=True, WithDecryption=True
-            ):
-                for parameter in page["Parameters"]:
-                    data.append({parameter["Name"]: parameter["Value"]})
-
-            result = parse_conf_data(data=slashes_to_dict(data), tomlfy=True)
-
-            if result and project_prefix in result:
-                # Prune out the prefixes before setting on the object
-                result = result[project_prefix]
-
-                if result and env_name in result:
-                    result = result[env_name]
-
-                if namespace_prefix is not None and namespace_prefix in result:
-                    result = result[namespace_prefix]
+        else:
+            # Fetch non-namespaced and namespaced keys, merging the latter into
+            # the former.
+            # TODO use single path query for both
+            normal_results = _fetch_all_parameters(
+                client=client,
+                project_prefix=project_prefix,
+                env_name=env_name,
+                namespace_prefix=None,
+                silent=silent,
+            )
+            if normal_results:
+                filter_strategy = obj.get("AWS_SSM_NAMESPACE_FILTER_STRATEGY")
+                if filter_strategy:
+                    normal_results = filter_strategy(normal_results)
 
                 obj.update(
-                    result,
+                    normal_results,
                     loader_identifier=IDENTIFIER,
                     validate=validate,
                 )
-        except (ClientError, BotoCoreError):
-            if silent:
-                logger.exception("Could not connect to AWS SSM.")
-                return
-            raise
+
+            if namespace_prefix is not None:
+                namespaced_results = _fetch_all_parameters(
+                    client=client,
+                    project_prefix=project_prefix,
+                    env_name=env_name,
+                    namespace_prefix=namespace_prefix,
+                    silent=silent,
+                )
+
+                if namespaced_results:
+                    obj.update(
+                        namespaced_results,
+                        loader_identifier=IDENTIFIER,
+                        validate=validate,
+                    )
+
+
+def _fetch_single_parameter(
+    client,
+    project_prefix: str,
+    env_name: str,
+    namespace_prefix: str | None,
+    silent: bool = True,
+):
+    """
+    Fetch single parameter by path.
+    """
+
+    path = f"/{project_prefix}/{env_name}"
+    if namespace_prefix is not None:
+        path = f"{path}/{namespace_prefix}"
+
+    logger.debug("Attempting to load a single parameter %s from AWS SSM" % path)
+
+    try:
+        value = client.get_parameter(Name=path, WithDecryption=True)
+    except (ClientError, BotoCoreError) as exc:
+        logger.warn("Could not connect to AWS SSM.", exc_info=exc)
+        if silent:
+            return
+        raise
+
+    if data := value.get("Parameter"):
+        value = parse_conf_data(data["Value"], tomlfy=True)
+
+    return value
+
+
+def _fetch_all_parameters(
+    client,
+    project_prefix: str,
+    env_name: str,
+    namespace_prefix: str | None,
+    silent: bool = True,
+):
+    """
+    Fetch all keys by path segment.
+    """
+
+    path = f"/{project_prefix}/{env_name}"
+    if namespace_prefix is not None:
+        path = f"{path}/{namespace_prefix}"
+
+    logger.debug("Attempting to load all parameters from AWS SSM for path %s" % path)
+
+    data = []
+    paginator = client.get_paginator("get_parameters_by_path")
+
+    try:
+        for page in paginator.paginate(Path=path, Recursive=True, WithDecryption=True):
+            for parameter in page["Parameters"]:
+                data.append({parameter["Name"]: parameter["Value"]})
+
+    except (ClientError, BotoCoreError) as exc:
+        logger.warn("Could not connect to AWS SSM.", exc_info=exc)
+        if silent:
+            return
+        raise
+
+    result = parse_conf_data(data=slashes_to_dict(data), tomlfy=True)
+
+    if result and project_prefix in result:
+        # Prune out the prefixes before setting on the object
+        result = result[project_prefix]
+
+        if result and env_name in result:
+            result = result[env_name]
+
+        if namespace_prefix is not None and namespace_prefix in result:
+            result = result[namespace_prefix]
+
+    return result

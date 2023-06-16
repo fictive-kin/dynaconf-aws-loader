@@ -1,4 +1,6 @@
-from dynaconf_aws_loader.util import slashes_to_dict
+import pytest
+
+from dynaconf_aws_loader.util import pull_from_env_or_obj, slashes_to_dict
 
 
 def test_slashes_to_dict():
@@ -32,3 +34,17 @@ def test_slashes_to_dict():
         },
         "other-app": {"development": {"database": {"host": "127.0.0.1"}}},
     }
+
+
+def test_pull_from_env_or_obj(blank_settings):
+    """
+    Get value from env (dict-like object) or passed settings, and
+    conditionally set this value on the settings.
+    """
+
+    env = {"key1": "value1", "key2": "value2"}
+
+    result = pull_from_env_or_obj(key_name="key1", env=env, obj=blank_settings)
+
+    assert result == "value1"
+    assert blank_settings.key1 == "value1"
