@@ -99,6 +99,63 @@ def basic_settings(
 
 
 @pytest.fixture
+def basic_settings_disable_default_env(
+    tmp_path: Path, ssm_client: SSMClient
+) -> t.Generator[Path, None, None]:
+    """
+    Basic settings with environment layers, with default environment disabled
+    """
+
+    project_name = "basic"
+
+    data = f"""
+    [default]
+    SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF = '{project_name}'
+    SSM_LOAD_DEFAULT_ENV_FOR_DYNACONF = false
+    PRODUCT_NAME = "foobar"
+    """
+
+    # We'll set some default values, just to ensure that our loader does not
+    # access them.
+    ssm_client.put_parameter(
+        Name=f"/{project_name}/default/products",
+        # Use @json cast for Dynaconf
+        # https://www.dynaconf.com/configuration/#auto_cast
+        Value="@json %s" % json.dumps({"plans": ["monthly", "yearly"]}),
+        Type="String",
+    )
+    ssm_client.put_parameter(
+        Name=f"/{project_name}/development/my_config_value",
+        Value="test123",
+        Type="String",
+    )
+    ssm_client.put_parameter(
+        Name=f"/{project_name}/production/database/password",
+        Value="password",
+        Type="SecureString",
+    )
+    ssm_client.put_parameter(
+        Name=f"/{project_name}/production/database/host",
+        Value="db.example.com",
+        Type="String",
+    )
+
+    settings_file = tmp_path / "settings.toml"
+    settings_file.write_text(data)
+
+    yield settings_file
+
+    ssm_client.delete_parameters(
+        Names=[
+            f"/{project_name}/production/database/host",
+            f"/{project_name}/production/database/password",
+            f"/{project_name}/development/my_config_value",
+            f"/{project_name}/default/products",
+        ]
+    )
+
+
+@pytest.fixture
 def settings_without_environments(
     tmp_path: Path, ssm_client: SSMClient
 ) -> t.Generator[Path, None, None]:
