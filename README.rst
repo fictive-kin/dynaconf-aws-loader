@@ -42,6 +42,7 @@ The following optional variables should be set in your ``settings.toml`` (or equ
 
 - ``SSM_ENDPOINT_URL_FOR_DYNACONF``: If your AWS SSM uses a different endpoint than the AWS default. This can be useful for local development when you are running something like `LocalStack <https://localstack.cloud/>`_.
 - ``SSM_SESSION_FOR_DYNACONF``: If you require custom `boto3.session.Session <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html>`_ arguments, you can specify then as a dictionary here. Note that this will override the default ``boto3`` credential configuration.
+- ``SSM_LOAD_DEFAULT_ENV_FOR_DYNACONF``: Boolean, defaults to ``True``. If you want the SSM loader to load keys under the ``default`` environment name. The key name itself can be set via the Dynaconf setting of ``DEFAULT_ENV_FOR_DYNACONF`` if you want it to be something other than ``default``.
 
 
 Parameter Store Details
@@ -63,7 +64,8 @@ An optional ``namespace`` can be specified as a sub-project grouping for paramet
 
 Note that if you choose to use a ``namespace`` identifier, it must not conflict with existing ``environment`` identifiers.
 
-The ``environment`` identifiers of: ``default``, ``main``, ``global``, and ``dynaconf`` indicate that any parameters nested below said identifiers will be inherited by *all* environments; these names are Dynaconf defaults. This can be useful for setting a default value that can then be overridden on a per-environment basis as necessary.
+If ``SSM_LOAD_DEFAULT_ENV_FOR_DYNACONF`` is set to ``True`` (which is the default value), the loader will add whatever the value of ``DEFAULT_ENV_FOR_DYNACONF`` as an ``environment`` key to load from SSM. The typical use case here is to have a default value for all environments that can be overriden on a per-environment basis as necessary.
+
 
 Security Considerations
 ~~~~~~~~~~~~~~~~~~~~~~~

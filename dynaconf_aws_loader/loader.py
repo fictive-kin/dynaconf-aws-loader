@@ -10,7 +10,6 @@ import logging
 import boto3
 from botocore.exceptions import ClientError, BotoCoreError, NoRegionError
 
-from dynaconf.utils import build_env_list
 from dynaconf.utils.parse_conf import parse_conf_data
 
 from . import IDENTIFIER
@@ -18,6 +17,7 @@ from .util import slashes_to_dict, pull_from_env_or_obj
 
 if t.TYPE_CHECKING:
     from mypy_boto3_ssm.client import SSMClient
+    from dynaconf.base import Settings
 
 
 logger = logging.getLogger("dynaconf.aws_loader")
@@ -30,6 +30,32 @@ def get_client(obj) -> SSMClient:
     session = boto3.session.Session(**obj.get("SSM_SESSION_FOR_DYNACONF", {}))
     client = session.client(service_name="ssm", endpoint_url=endpoint_url)
     return client
+
+
+def build_env_list(obj: Settings, env: t.Optional[str]) -> t.Iterable[str]:
+    """
+    Build env list for loader to iterate.
+
+    Ensure we are building the env list in such a way that we are not going to
+    be hitting the remote AWS SSM Parameter Store endpoints needlessly. Let's only
+    hit `DEFAULT_ENV_FOR_DYNACONF`, the currently set environment on the settings object,
+    and the manually set `env` (if any).
+
+    Some of this logic is similar to `dynaconf.utils.build_env_list`.
+    """
+
+    env_list = []
+    if obj.get("SSM_LOAD_DEFAULT_ENV_FOR_DYNACONF", True) is True:
+        default_env_name: str = obj.get("DEFAULT_ENV_FOR_DYNACONF", "default")
+        if default_env_name and (default_env_name := default_env_name.lower()):
+            env_list.append(default_env_name)
+
+    # add a manually set env, if specified
+    if env and (env_identifier := env.lower()) not in env_list:
+        env_list.append(env_identifier)
+
+    # Ensure any leading/trailing whitespace is removed
+    return map(str.strip, env_list)
 
 
 def load(
@@ -97,8 +123,6 @@ def load(
             return
         raise
 
-    env_list = build_env_list(obj, env or obj.current_env)
-
     project_prefix = pull_from_env_or_obj(prefix_key_name, os.environ, obj)
     namespace_prefix = pull_from_env_or_obj(namespace_key_name, os.environ, obj)
 
@@ -107,6 +131,8 @@ def load(
             f"{prefix_key_name} must be set in settings"
             " or environment for AWS SSM loader to work."
         )
+
+    env_list = build_env_list(obj, env or obj.current_env)
 
     for env_name in env_list:
         env_name = env_name.lower()

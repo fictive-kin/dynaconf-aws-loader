@@ -75,6 +75,49 @@ def test_basic_environment_based_settings(
         assert prod_settings.MY_CONFIG_VALUE == "test123"
 
 
+def test_basic_environment_based_settings_without_default_env(
+    basic_settings_disable_default_env: pathlib.Path,
+):
+    """
+    Test simple loading of configuration from AWS SSM on a per-environment
+    basis, omitting the default environment
+
+    """
+
+    dev_settings = Dynaconf(
+        environments=True,
+        FORCE_ENV_FOR_DYNACONF="development",
+        settings_file=str(basic_settings_disable_default_env.resolve()),
+        LOADERS_FOR_DYNACONF=[
+            "dynaconf_aws_loader.loader",
+        ],
+    )
+
+    assert dev_settings.current_env == "development"
+    assert dev_settings.SSM_LOAD_DEFAULT_ENV_FOR_DYNACONF is False
+
+    # This should not be set, since we are avoiding defaults
+    with pytest.raises(AttributeError):
+        dev_settings.PRODUCTS
+
+    prod_settings = Dynaconf(
+        environments=True,
+        FORCE_ENV_FOR_DYNACONF="production",
+        settings_file=str(basic_settings_disable_default_env.resolve()),
+        LOADERS_FOR_DYNACONF=[
+            "dynaconf_aws_loader.loader",
+        ],
+    )
+
+    assert prod_settings.current_env == "production"
+    assert prod_settings.SSM_PARAMETER_PROJECT_PREFIX_FOR_DYNACONF == "basic"
+
+    # Loaded from default env
+    # This should not be set, since we are avoiding defaults
+    with pytest.raises(AttributeError):
+        prod_settings.PRODUCTS
+
+
 def test_settings_with_no_environments(
     settings_without_environments: pathlib.Path,
 ):
