@@ -35,6 +35,10 @@ boto3-stubs = {extras = ["ssm"], version = "^1.26"}
 localstack-client = "^2.1"
 pytest-env = "^0.8.1"
 
+
+[tool.poetry.group.test.dependencies]
+pytest-mock = "^3.11.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
