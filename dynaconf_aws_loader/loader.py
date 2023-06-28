@@ -147,6 +147,7 @@ def load(
                 project_prefix=project_prefix,
                 env_name=env_name,
                 namespace_prefix=namespace_prefix,
+                key=key,
                 silent=silent,
             )
             if value:
@@ -164,6 +165,7 @@ def load(
                 namespace_prefix=None,
                 silent=silent,
             )
+
             if normal_results:
                 filter_strategy = obj.get("AWS_SSM_NAMESPACE_FILTER_STRATEGY")
                 if filter_strategy:
@@ -196,7 +198,8 @@ def _fetch_single_parameter(
     client,
     project_prefix: str,
     env_name: str,
-    namespace_prefix: str | None,
+    key: str,
+    namespace_prefix: str | None = None,
     silent: bool = True,
 ):
     """
@@ -207,12 +210,22 @@ def _fetch_single_parameter(
     if namespace_prefix is not None:
         path = f"{path}/{namespace_prefix}"
 
+    path = f"{path}/{key}"
+
     logger.debug("Attempting to load a single parameter %s from AWS SSM" % path)
 
     try:
         value = client.get_parameter(Name=path, WithDecryption=True)
-    except (ClientError, BotoCoreError) as exc:
-        logger.warn("Could not connect to AWS SSM.", exc_info=exc)
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") == "ParameterNotFound":
+            logger.warn("Parameter with path %s does not exist in AWS SSM." % path)
+        if silent:
+            return
+        raise
+    except BotoCoreError:
+        logger.warn(
+            "Could not connect to AWS SSM at endpoint %s." % client.meta.endpoint_url
+        )
         if silent:
             return
         raise
@@ -227,7 +240,7 @@ def _fetch_all_parameters(
     client,
     project_prefix: str,
     env_name: str,
-    namespace_prefix: str | None,
+    namespace_prefix: str | None = None,
     silent: bool = True,
 ):
     """
@@ -248,8 +261,16 @@ def _fetch_all_parameters(
             for parameter in page["Parameters"]:
                 data.append({parameter["Name"]: parameter["Value"]})
 
-    except (ClientError, BotoCoreError) as exc:
-        logger.warn("Could not connect to AWS SSM.", exc_info=exc)
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") == "ParameterNotFound":
+            logger.warn("Parameter with path %s does not exist in AWS SSM." % path)
+        if silent:
+            return
+        raise
+    except BotoCoreError:
+        logger.warn(
+            "Could not connect to AWS SSM at endpoint %s." % client.meta.endpoint_url
+        )
         if silent:
             return
         raise
