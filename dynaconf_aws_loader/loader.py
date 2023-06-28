@@ -147,6 +147,7 @@ def load(
                 project_prefix=project_prefix,
                 env_name=env_name,
                 namespace_prefix=namespace_prefix,
+                key=key,
                 silent=silent,
             )
             if value:
@@ -196,7 +197,8 @@ def _fetch_single_parameter(
     client,
     project_prefix: str,
     env_name: str,
-    namespace_prefix: str | None,
+    key: str,
+    namespace_prefix: str | None = None,
     silent: bool = True,
 ):
     """
@@ -206,6 +208,8 @@ def _fetch_single_parameter(
     path = f"/{project_prefix}/{env_name}"
     if namespace_prefix is not None:
         path = f"{path}/{namespace_prefix}"
+
+    path = f"{path}/{key}"
 
     logger.debug("Attempting to load a single parameter %s from AWS SSM" % path)
 
