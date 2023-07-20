@@ -219,17 +219,17 @@ def _fetch_single_parameter(
     try:
         value = client.get_parameter(Name=path, WithDecryption=True)
     except ClientError as exc:
-        if exc.response.get("Error", {}).get("Code") == "ParameterNotFound":
-            logger.warn("Parameter with path %s does not exist in AWS SSM." % path)
         if silent:
             return
+        if exc.response.get("Error", {}).get("Code") == "ParameterNotFound":
+            logger.info("Parameter with path %s does not exist in AWS SSM." % path)
         raise
     except BotoCoreError:
-        logger.warn(
-            "Could not connect to AWS SSM at endpoint %s." % client.meta.endpoint_url
-        )
         if silent:
             return
+        logger.error(
+            "Could not connect to AWS SSM at endpoint %s." % client.meta.endpoint_url
+        )
         raise
 
     if data := value.get("Parameter"):
@@ -264,17 +264,17 @@ def _fetch_all_parameters(
                 data.append({parameter["Name"]: parameter["Value"]})
 
     except ClientError as exc:
-        if exc.response.get("Error", {}).get("Code") == "ParameterNotFound":
-            logger.warn("Parameter with path %s does not exist in AWS SSM." % path)
         if silent:
             return
+        if exc.response.get("Error", {}).get("Code") == "ParameterNotFound":
+            logger.info("Parameter with path %s does not exist in AWS SSM." % path)
         raise
     except BotoCoreError:
-        logger.warn(
-            "Could not connect to AWS SSM at endpoint %s." % client.meta.endpoint_url
-        )
         if silent:
             return
+        logger.error(
+            "Could not connect to AWS SSM at endpoint %s." % client.meta.endpoint_url
+        )
         raise
 
     result = parse_conf_data(data=slashes_to_dict(data), tomlfy=True)
