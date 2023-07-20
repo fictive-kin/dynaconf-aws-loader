@@ -12,8 +12,8 @@ from botocore.exceptions import ClientError, BotoCoreError, NoRegionError
 
 from dynaconf.utils.parse_conf import parse_conf_data
 
-from . import IDENTIFIER
 from .util import slashes_to_dict, pull_from_env_or_obj
+from . import generate_loader_identifier
 
 if t.TYPE_CHECKING:
     from mypy_boto3_ssm.client import SSMClient
@@ -141,6 +141,8 @@ def load(
         if namespace_prefix is not None:
             path = f"{path}/{namespace_prefix}"
 
+        loader_identifier = generate_loader_identifier(path, env)
+
         if key is not None:
             value = _fetch_single_parameter(
                 client,
@@ -173,7 +175,7 @@ def load(
 
                 obj.update(
                     normal_results,
-                    loader_identifier=IDENTIFIER,
+                    loader_identifier=loader_identifier,
                     validate=validate,
                 )
 
@@ -189,7 +191,7 @@ def load(
                 if namespaced_results:
                     obj.update(
                         namespaced_results,
-                        loader_identifier=IDENTIFIER,
+                        loader_identifier=loader_identifier,
                         validate=validate,
                     )
 
