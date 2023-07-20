@@ -134,7 +134,7 @@ def test_fetch_single_parameter_missing(stubbed_client, caplog):
 
     with stubbed_client:
         with pytest.raises(stubbed_client.client.exceptions.ParameterNotFound):
-            with caplog.at_level(logging.WARN, logger="dynaconf.aws_loader"):
+            with caplog.at_level(logging.INFO, logger="dynaconf.aws_loader"):
                 _fetch_single_parameter(
                     stubbed_client.client,
                     project_prefix="foobar",
@@ -146,7 +146,7 @@ def test_fetch_single_parameter_missing(stubbed_client, caplog):
     assert caplog.record_tuples == [
         (
             "dynaconf.aws_loader",
-            logging.WARN,
+            logging.INFO,
             "Parameter with path /foobar/testing/baldur does not exist in AWS SSM.",
         )
     ]
@@ -166,7 +166,7 @@ def test_fetch_all_parameters_missing(stubbed_client, caplog):
 
     with stubbed_client:
         with pytest.raises(stubbed_client.client.exceptions.ParameterNotFound):
-            with caplog.at_level(logging.WARN, logger="dynaconf.aws_loader"):
+            with caplog.at_level(logging.INFO, logger="dynaconf.aws_loader"):
                 _fetch_all_parameters(
                     stubbed_client.client,
                     project_prefix="foobar",
@@ -177,7 +177,7 @@ def test_fetch_all_parameters_missing(stubbed_client, caplog):
     assert caplog.record_tuples == [
         (
             "dynaconf.aws_loader",
-            logging.WARN,
+            logging.INFO,
             "Parameter with path /foobar/testing does not exist in AWS SSM.",
         )
     ]
