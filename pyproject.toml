@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dynaconf-aws-loader"
-version = "0.4.0"
+version = "0.5.0"
 description = "A custom loader for Dynaconf that uses AWS Systems Manager Parameter Store as a source of truth."
 homepage = "https://github.com/fictivekin/dynaconf-aws-loader"
 repository = "https://github.com/fictivekin/dynaconf-aws-loader"
