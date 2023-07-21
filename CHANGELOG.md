@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2023-07-20
+
+### Bug Fixes
+
+- Actually allow single-parameter loading to work
+
+### Miscellaneous Tasks
+
+- Reorganize Action workflow to utilize python cache
+- Add additional unit-ish tests for loader
+- Handle loader identifier changes between Dynaconf 3.1->3.2
+- Update workflow to utilize Dynaconf versions in test matrix
+- Replace warn logging with info/error
+
 ## [0.4.0] - 2023-06-22
 
 ### Bug Fixes
